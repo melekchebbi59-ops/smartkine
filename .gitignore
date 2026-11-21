@@ -1,0 +1,23 @@
+# Symfony
+/backend/.env
+/backend/.env.*
+!/backend/.env.example
+/backend/vendor/
+/backend/var/
+/backend/config/jwt/*.pem
+
+# Angular
+/frontend/node_modules/
+/frontend/dist/
+/frontend/.angular/
+/frontend/coverage/
+
+# Secrets et fichiers temporaires
+.env
+.env.*
+!.env.example
+*.log
+
+# Postman : à vérifier avant publication
+.postman/
+/postman/
