@@ -145,7 +145,8 @@ notifications, tableau de bord statistique, optimisation mobile + manifeste PWA,
 ## 4. Écart avec le cahier des spécifications
 
 Le cahier prévoyait **Symfony + Twig** (monolithe). L'équipe a démarré avec **Symfony (API REST + JWT) + Angular** :
-cette architecture a été conservée. Il faut mettre à jour la section « Stack technologique » du cahier en conséquence.
+cette architecture a été conservée. Le cahier a été mis à jour en conséquence :
+**[docs/SmartKineCahierSpecifications-v3.pdf](docs/SmartKineCahierSpecifications-v3.pdf)** (stack, sprints, diagramme de classes, tableau des écarts avec la v2).
 
 ---
 
