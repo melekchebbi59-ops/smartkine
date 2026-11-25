@@ -24,6 +24,13 @@ import { DemandeRdv, User } from '../../core/models';
           <div class="text-muted small">Inscriptions à valider</div>
         </a>
       </div>
+      <div class="col-sm-6 col-xl-3">
+        <a routerLink="/gerant/patients" class="card stat-card p-3 text-decoration-none text-body h-100">
+          <i class="bi bi-diagram-3 icon"></i>
+          <div class="value">{{ sansKine() }}</div>
+          <div class="text-muted small">Patients à affecter à un kiné</div>
+        </a>
+      </div>
     </div>
   `,
 })
@@ -31,9 +38,11 @@ export class GerantDashboard {
   private api = inject(Api);
   demandes = signal(0);
   inscriptions = signal(0);
+  sansKine = signal(0);
 
   constructor() {
     this.api.get<DemandeRdv[]>('/gerant/demandes-rdv', { statut: 'en_attente' }).subscribe(l => this.demandes.set(l.length));
     this.api.get<User[]>('/gerant/inscriptions').subscribe(l => this.inscriptions.set(l.length));
+    this.api.get<User[]>('/gerant/patients', { sansKine: 1 }).subscribe(l => this.sansKine.set(l.length));
   }
 }

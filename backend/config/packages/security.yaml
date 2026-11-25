@@ -8,10 +8,10 @@ security:
                 class: App\Entity\User
                 property: email
 
-    # Le gérant a aussi accès à tout ce qui est « authentifié ».
+    # ROLE_STAFF = personnel du centre (gérant + kinés), ex. : banque d'exercices.
     role_hierarchy:
-        ROLE_GERANT: [ROLE_USER]
-        ROLE_KINE: [ROLE_USER]
+        ROLE_GERANT: [ROLE_USER, ROLE_STAFF]
+        ROLE_KINE: [ROLE_USER, ROLE_STAFF]
         ROLE_PATIENT: [ROLE_USER]
 
     firewalls:

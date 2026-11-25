@@ -21,3 +21,5 @@
 # Postman : à vérifier avant publication
 .postman/
 /postman/
+# Images envoyées (exercices)
+/backend/public/uploads/

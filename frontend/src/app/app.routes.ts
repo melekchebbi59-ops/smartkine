@@ -33,6 +33,8 @@ export const routes: Routes = [
           { path: 'demandes', loadComponent: () => import('./pages/gerant/demandes').then(m => m.GerantDemandes), title: 'Demandes de RDV' },
           { path: 'inscriptions', loadComponent: () => import('./pages/gerant/inscriptions').then(m => m.GerantInscriptions), title: 'Inscriptions' },
           { path: 'utilisateurs', loadComponent: () => import('./pages/gerant/utilisateurs').then(m => m.GerantUtilisateurs), title: 'Utilisateurs' },
+          { path: 'patients', loadComponent: () => import('./pages/gerant/patients').then(m => m.GerantPatients), title: 'Patients & affectations' },
+          { path: 'exercices', loadComponent: () => import('./pages/shared-pages/exercices').then(m => m.ExercicesPage), title: "Banque d'exercices" },
         ],
       },
       {
@@ -40,6 +42,11 @@ export const routes: Routes = [
         canActivate: [roleGuard('kine')],
         children: [
           { path: '', loadComponent: () => import('./pages/kine/accueil').then(m => m.KineAccueil), title: 'Espace kiné' },
+          { path: 'agenda', loadComponent: () => import('./pages/kine/agenda').then(m => m.KineAgenda), title: 'Mon agenda' },
+          { path: 'demandes', loadComponent: () => import('./pages/kine/demandes').then(m => m.KineDemandes), title: 'Demandes patients' },
+          { path: 'patients', loadComponent: () => import('./pages/kine/patients').then(m => m.KinePatients), title: 'Mes patients' },
+          { path: 'patients/:id', loadComponent: () => import('./pages/kine/patient-detail').then(m => m.KinePatientDetail), title: 'Fiche patient' },
+          { path: 'exercices', loadComponent: () => import('./pages/shared-pages/exercices').then(m => m.ExercicesPage), title: "Banque d'exercices" },
         ],
       },
       {
@@ -47,6 +54,8 @@ export const routes: Routes = [
         canActivate: [roleGuard('patient')],
         children: [
           { path: '', loadComponent: () => import('./pages/patient/accueil').then(m => m.PatientAccueil), title: 'Espace patient' },
+          { path: 'planning', loadComponent: () => import('./pages/patient/planning').then(m => m.PatientPlanning), title: 'Mon planning' },
+          { path: 'plan', loadComponent: () => import('./pages/patient/plan').then(m => m.PatientPlan), title: 'Mon plan de rééducation' },
         ],
       },
     ],
