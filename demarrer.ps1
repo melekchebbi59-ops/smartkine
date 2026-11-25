@@ -19,5 +19,10 @@ if (Get-Command mailpit -ErrorAction SilentlyContinue) {
 # Frontend Angular sur http://localhost:4200
 Start-Process powershell -ArgumentList "-NoExit", "-Command", "Set-Location '$racine\frontend'; npm start"
 
-Start-Sleep -Seconds 12
+# Attend qu'Angular réponde (2 minutes maximum) avant d'ouvrir le navigateur
+Write-Host "Démarrage d'Angular en cours..." -ForegroundColor Cyan
+for ($i = 0; $i -lt 120; $i++) {
+    try { Invoke-WebRequest "http://localhost:4200" -UseBasicParsing -TimeoutSec 2 | Out-Null; break } catch { Start-Sleep -Seconds 1 }
+}
 Start-Process "http://localhost:4200"
+Write-Host "SmartKiné est prêt : http://localhost:4200 (fermez les fenêtres PowerShell ouvertes pour arrêter)." -ForegroundColor Green

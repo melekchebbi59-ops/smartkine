@@ -5,7 +5,7 @@ Projet d'intégration **MDW 3 — ISET Sousse — AU 2026-2027** · Méthode **A
 
 | Partie | Technologie |
 |---|---|
-| Backend (API REST) | PHP 8.4 · Symfony 7.4 · Doctrine ORM · LexikJWT · Symfony Mailer |
+| Backend (API REST) | PHP 8.2+ · Symfony 7.4 · Doctrine ORM · LexikJWT · Symfony Mailer |
 | Frontend | Angular 22 · Bootstrap 5 · Bootstrap Icons (responsive mobile-first, installable PWA) |
 | Base de données | MySQL 8 (13 tables) |
 | Outils | Git / GitHub (1 branche par sprint), XAMPP, Postman / Newman, Mailpit |
@@ -14,7 +14,7 @@ Projet d'intégration **MDW 3 — ISET Sousse — AU 2026-2027** · Méthode **A
 
 ## 1. Installation (Windows + XAMPP)
 
-**Prérequis :** XAMPP avec **MySQL démarré**, PHP 8.4 ou plus (extensions `sodium`, `pdo_mysql`, `intl` activées dans `php.ini`), Composer, Node.js, Git.
+**Prérequis :** XAMPP avec **MySQL démarré**, PHP 8.2 ou plus — celui de XAMPP convient (extensions `sodium`, `pdo_mysql`, `intl` activées dans `php.ini`), Composer, Node.js 22.22 ou plus (LTS conseillée), Git.
 
 ### Méthode rapide (2 commandes)
 
@@ -33,8 +33,8 @@ powershell -ExecutionPolicy Bypass -File .\demarrer.ps1    # à chaque fois
 ```powershell
 cd backend
 copy .env.example .env      # si vous avez déjà un .env : ajoutez-y les variables manquantes de .env.example
-composer update symfony/mailer --with-dependencies   # 1re fois seulement
 composer install
+$env:OPENSSL_CONF = "C:\xampp\php\extras\ssl\openssl.cnf"   # XAMPP : nécessaire pour générer les clés
 php bin/console lexik:jwt:generate-keypair --skip-if-exists
 php bin/console doctrine:database:create --if-not-exists
 php bin/console doctrine:migrations:migrate -n

@@ -18,7 +18,12 @@ foreach ($outil in @("php", "composer", "node", "npm")) {
 }
 $phpVersion = (php -r "echo PHP_VERSION;")
 Ok "PHP $phpVersion"
-if ([version]($phpVersion -replace '[^0-9.].*$','') -lt [version]"8.4") { Stop-Erreur "PHP 8.4 minimum est requis (version actuelle : $phpVersion)." }
+if ([version]($phpVersion -replace '[^0-9.].*$','') -lt [version]"8.2") { Stop-Erreur "PHP 8.2 minimum est requis (version actuelle : $phpVersion)." }
+# XAMPP sous Windows : OpenSSL a besoin de son fichier de configuration (sinon les clés JWT ne se génèrent pas)
+if (-not $env:OPENSSL_CONF) {
+    $cnf = @("C:\xampp\php\extras\ssl\openssl.cnf", "C:\xampp\apache\conf\openssl.cnf") | Where-Object { Test-Path $_ } | Select-Object -First 1
+    if ($cnf) { $env:OPENSSL_CONF = $cnf }
+}
 $extensions = php -m
 foreach ($ext in @("sodium", "pdo_mysql", "intl")) {
     if ($extensions -notcontains $ext) { Write-Host "    ATTENTION : extension PHP '$ext' non activée (php.ini de XAMPP : retirer le ; devant extension=$ext)" -ForegroundColor Yellow }
@@ -29,7 +34,8 @@ Set-Location "$racine\backend"
 
 Etape "Fichier .env"
 if (-not (Test-Path ".env")) {
-    Copy-Item ".env.example" ".env"
+    $secret = -join ((1..32) | ForEach-Object { '{0:x2}' -f (Get-Random -Maximum 256) })
+    (Get-Content ".env.example" -Raw).Replace("remplacez_par_une_chaine_aleatoire", $secret) | Set-Content ".env" -Encoding ascii
     Ok ".env créé à partir de .env.example"
 } else {
     # Ajoute les nouvelles variables qui manquent dans un .env existant
@@ -43,10 +49,6 @@ if (-not (Test-Path ".env")) {
 }
 
 Etape "Dépendances PHP (Composer)"
-if (-not (Select-String -Path "composer.lock" -Pattern '"name": "symfony/mailer"' -Quiet)) {
-    # 1re installation après l'ajout de Symfony Mailer : met à jour composer.lock
-    composer update symfony/mailer --with-dependencies --no-interaction
-}
 composer install --no-interaction
 if ($LASTEXITCODE -ne 0) { Stop-Erreur "composer install a échoué." }
 Ok "vendor installé"
