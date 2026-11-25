@@ -9,3 +9,9 @@
 
 controllers:
     resource: routing.controllers
+
+# Connexion JWT : la route doit exister, mais c'est le firewall « login »
+# (json_login + Lexik) qui répond avec le token.
+api_login:
+    path: /api/login
+    methods: [POST]

@@ -7,9 +7,17 @@ use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
 
+/**
+ * Classe mère « Utilisateur » du diagramme de classes.
+ * Héritage Doctrine par tables jointes : user + gerant / kine / patient.
+ */
 #[ORM\Entity(repositoryClass: UserRepository::class)]
+#[ORM\Table(name: '`user`')]
 #[ORM\UniqueConstraint(name: 'UNIQ_IDENTIFIER_EMAIL', fields: ['email'])]
-class User implements UserInterface, PasswordAuthenticatedUserInterface
+#[ORM\InheritanceType('JOINED')]
+#[ORM\DiscriminatorColumn(name: 'type', type: 'string', length: 20)]
+#[ORM\DiscriminatorMap(['gerant' => Gerant::class, 'kine' => Kine::class, 'patient' => Patient::class])]
+abstract class User implements UserInterface, PasswordAuthenticatedUserInterface
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
@@ -20,6 +28,8 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     private ?string $email = null;
 
     /**
+     * Rôles supplémentaires éventuels (le rôle principal dépend de la classe fille).
+     *
      * @var list<string>
      */
     #[ORM\Column]
@@ -37,6 +47,24 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(length: 20, nullable: true)]
     private ?string $phone = null;
 
+    /** Un compte désactivé par le gérant ne peut plus se connecter (US-22). */
+    #[ORM\Column(options: ['default' => true])]
+    private bool $active = true;
+
+    #[ORM\Column]
+    private ?\DateTimeImmutable $createdAt = null;
+
+    public function __construct()
+    {
+        $this->createdAt = new \DateTimeImmutable();
+    }
+
+    /** Rôle principal : ROLE_GERANT, ROLE_KINE ou ROLE_PATIENT. */
+    abstract public function getMainRole(): string;
+
+    /** Type court : gerant, kine ou patient. */
+    abstract public function getType(): string;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -49,7 +77,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     public function setEmail(string $email): static
     {
-        $this->email = $email;
+        $this->email = strtolower(trim($email));
         return $this;
     }
 
@@ -58,12 +86,16 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return (string) $this->email;
     }
 
+    /**
+     * Correction Sprint 1 : avant, ROLE_PATIENT était ajouté à tout le monde,
+     * ce qui cassait le contrôle d'accès par rôle (RBAC).
+     */
     public function getRoles(): array
     {
         $roles = $this->roles;
-        $roles[] = 'ROLE_PATIENT';
+        $roles[] = $this->getMainRole();
 
-        return array_unique($roles);
+        return array_values(array_unique($roles));
     }
 
     public function setRoles(array $roles): static
@@ -105,6 +137,11 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 
+    public function getFullName(): string
+    {
+        return trim($this->firstName . ' ' . $this->lastName);
+    }
+
     public function getPhone(): ?string
     {
         return $this->phone;
@@ -116,8 +153,24 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 
+    public function isActive(): bool
+    {
+        return $this->active;
+    }
+
+    public function setActive(bool $active): static
+    {
+        $this->active = $active;
+        return $this;
+    }
+
+    public function getCreatedAt(): ?\DateTimeImmutable
+    {
+        return $this->createdAt;
+    }
+
     public function eraseCredentials(): void
     {
-        // Aucun donnée sensible temporaire à effacer pour le moment.
+        // Aucune donnée sensible temporaire à effacer.
     }
 }

@@ -1,0 +1,13 @@
+{
+  "name": "SmartKiné",
+  "short_name": "SmartKiné",
+  "description": "Gestion du centre de kinésithérapie SmartKiné",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f5f8f9",
+  "theme_color": "#159a91",
+  "lang": "fr",
+  "icons": [
+    { "src": "favicon.ico", "sizes": "48x48", "type": "image/x-icon" }
+  ]
+}

@@ -1,23 +1,33 @@
 # yaml-language-server: $schema=../vendor/symfony/dependency-injection/Loader/schema/services.schema.json
 
-# This file is the entry point to configure your own services.
-# Files in the packages/ subdirectory configure your dependencies.
-# See also https://symfony.com/doc/current/service_container/import.html
-
-# Put parameters here that don't need to change on each machine where the app is deployed
-# https://symfony.com/doc/current/best_practices.html#use-parameters-for-application-configuration
 parameters:
+    # Informations publiques du centre (US-01) — à adapter.
+    centre:
+        nom: 'Centre SmartKiné'
+        adresse: 'Avenue Habib Bourguiba, 4000 Sousse, Tunisie'
+        telephone: '+216 73 000 000'
+        email: 'contact@smartkine.tn'
+        horaires:
+            - { jours: 'Lundi – Vendredi', heures: '08:00 – 19:00' }
+            - { jours: 'Samedi', heures: '08:00 – 13:00' }
+            - { jours: 'Dimanche', heures: 'Fermé' }
+        services:
+            - { titre: 'Rééducation orthopédique', description: 'Après fracture, entorse, prothèse ou opération.' }
+            - { titre: 'Kinésithérapie du sport', description: 'Reprise sportive, tendinites, lésions musculaires.' }
+            - { titre: 'Rééducation neurologique', description: 'AVC, sclérose en plaques, troubles de l''équilibre.' }
+            - { titre: 'Kiné respiratoire', description: 'Bronchiolite, BPCO, suites de COVID.' }
+            - { titre: 'Massothérapie & douleurs', description: 'Lombalgies, cervicalgies, douleurs chroniques.' }
+        latitude: 35.8256
+        longitude: 10.6084
 
 services:
-    # default configuration for services in *this* file
     _defaults:
-        autowire: true      # Automatically injects dependencies in your services.
-        autoconfigure: true # Automatically registers your services as commands, event subscribers, etc.
+        autowire: true
+        autoconfigure: true
+        bind:
+            string $mailerFrom: '%env(MAILER_FROM)%'
+            string $frontendUrl: '%env(FRONTEND_URL)%'
+            array $centre: '%centre%'
 
-    # makes classes in src/ available to be used as services
-    # this creates a service per class whose id is the fully-qualified class name
     App\:
         resource: '../src/'
-
-    # add more service definitions when explicit configuration is needed
-    # please note that last definitions always *replace* previous ones

@@ -1,10 +1,17 @@
 <div class="login-container">
   <div class="login-card">
-    <h1>SmartKiné</h1>
+    <h1><a routerLink="/" class="text-decoration-none" style="color: inherit"><i class="bi bi-heart-pulse-fill"></i> SmartKiné</a></h1>
     <h2>Connexion</h2>
-    <p>Connectez-vous à votre espace patient</p>
+    <p>Patient, kinésithérapeute ou gérant : connectez-vous à votre espace</p>
 
-    <form (ngSubmit)="onSubmit()">
+    @if (expired) {
+      <div class="alert alert-warning py-2 small">Votre session a expiré, reconnectez-vous.</div>
+    }
+    @if (error()) {
+      <div class="alert alert-danger py-2 small">{{ error() }}</div>
+    }
+
+    <form (ngSubmit)="onSubmit()" #f="ngForm">
       <div class="form-group">
         <label for="email">Adresse e-mail</label>
         <input
@@ -13,6 +20,7 @@
           name="email"
           [(ngModel)]="email"
           placeholder="exemple@email.com"
+          autocomplete="username"
           required
         >
       </div>
@@ -25,16 +33,19 @@
           name="password"
           [(ngModel)]="password"
           placeholder="Votre mot de passe"
+          autocomplete="current-password"
           required
         >
       </div>
 
-      <button type="submit">Se connecter</button>
+      <button type="submit" [disabled]="f.invalid || loading()">
+        @if (loading()) { Connexion... } @else { Se connecter }
+      </button>
     </form>
 
     <p class="register-link">
       Pas encore de compte ?
-      <a routerLink="/register">Créer un compte</a>
+      <a routerLink="/inscription">Créer un compte</a>
     </p>
   </div>
 </div>

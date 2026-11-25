@@ -8,6 +8,12 @@ security:
                 class: App\Entity\User
                 property: email
 
+    # Le gérant a aussi accès à tout ce qui est « authentifié ».
+    role_hierarchy:
+        ROLE_GERANT: [ROLE_USER]
+        ROLE_KINE: [ROLE_USER]
+        ROLE_PATIENT: [ROLE_USER]
+
     firewalls:
         dev:
             pattern: ^/(_profiler(/|$)|(_wdt|assets|build)/)
@@ -16,6 +22,8 @@ security:
         login:
             pattern: ^/api/login
             stateless: true
+            provider: app_user_provider
+            user_checker: App\Security\UserChecker
             json_login:
                 check_path: /api/login
                 username_path: email
@@ -26,15 +34,22 @@ security:
         api:
             pattern: ^/api
             stateless: true
+            provider: app_user_provider
+            user_checker: App\Security\UserChecker
             jwt: ~
 
         main:
             lazy: true
             provider: app_user_provider
 
+    # Contrôle d'accès par rôle (RBAC)
     access_control:
         - { path: ^/api/login, roles: PUBLIC_ACCESS }
         - { path: ^/api/register, roles: PUBLIC_ACCESS }
+        - { path: ^/api/public, roles: PUBLIC_ACCESS }
+        - { path: ^/api/gerant, roles: ROLE_GERANT }
+        - { path: ^/api/kine, roles: ROLE_KINE }
+        - { path: ^/api/patient, roles: ROLE_PATIENT }
         - { path: ^/api, roles: IS_AUTHENTICATED_FULLY }
 
 when@test:

@@ -1,1 +1,76 @@
-/* You can add global styles to this file, and also import other style files */
+/* Styles globaux SmartKiné — Bootstrap 5 + couleur de marque (turquoise santé) */
+@import 'bootstrap/dist/css/bootstrap.min.css';
+@import 'bootstrap-icons/font/bootstrap-icons.css';
+
+:root {
+  --brand: #159a91;
+  --brand-dark: #0f7770;
+  --brand-light: #e6f5f4;
+  --bs-primary: #159a91;
+  --bs-primary-rgb: 21, 154, 145;
+  --bs-link-color: #0f7770;
+  --bs-link-color-rgb: 15, 119, 112;
+  --bs-body-font-family: 'Segoe UI', system-ui, -apple-system, Roboto, Arial, sans-serif;
+}
+
+body { background: #f5f8f9; }
+
+.text-brand { color: var(--brand) !important; }
+.bg-brand { background: var(--brand) !important; }
+.bg-brand-light { background: var(--brand-light) !important; }
+
+.btn-brand, .btn-primary {
+  --bs-btn-color: #fff;
+  --bs-btn-bg: var(--brand);
+  --bs-btn-border-color: var(--brand);
+  --bs-btn-hover-color: #fff;
+  --bs-btn-hover-bg: var(--brand-dark);
+  --bs-btn-hover-border-color: var(--brand-dark);
+  --bs-btn-active-bg: var(--brand-dark);
+  --bs-btn-disabled-bg: var(--brand);
+  --bs-btn-disabled-border-color: var(--brand);
+}
+.btn-outline-primary {
+  --bs-btn-color: var(--brand);
+  --bs-btn-border-color: var(--brand);
+  --bs-btn-hover-bg: var(--brand);
+  --bs-btn-hover-border-color: var(--brand);
+  --bs-btn-active-bg: var(--brand-dark);
+}
+.text-bg-primary { background-color: var(--brand) !important; }
+.form-control:focus, .form-select:focus { border-color: var(--brand); box-shadow: 0 0 0 .2rem rgba(21,154,145,.2); }
+.nav-pills .nav-link.active { background: var(--brand); }
+
+.card { border: 0; border-radius: .9rem; box-shadow: 0 2px 12px rgba(0,0,0,.05); }
+.card-header { background: transparent; font-weight: 600; }
+.page-title { font-weight: 700; margin-bottom: 1.25rem; }
+.table > :not(caption) > * > * { vertical-align: middle; }
+.empty { text-align: center; color: #8a979c; padding: 2rem 1rem; }
+
+/* ---------- Espace connecté : menu latéral ---------- */
+.app-shell { min-height: 100vh; display: flex; }
+.sidebar {
+  width: 250px; flex-shrink: 0; background: #12393d; color: #fff;
+  position: sticky; top: 0; height: 100vh; overflow-y: auto; z-index: 1040;
+}
+.sidebar .nav-link { color: rgba(255,255,255,.75); border-radius: .5rem; padding: .6rem .8rem; margin-bottom: 2px; }
+.sidebar .nav-link:hover { color: #fff; background: rgba(255,255,255,.08); }
+.sidebar .nav-link.active { color: #fff; background: var(--brand); }
+.app-main { flex: 1; min-width: 0; }
+.topbar { height: 60px; background: #fff; border-bottom: 1px solid #e7ecee; position: sticky; top: 0; z-index: 1000; }
+
+/* Mobile-first : le menu devient un tiroir */
+@media (max-width: 991.98px) {
+  .sidebar { position: fixed; left: 0; transform: translateX(-100%); transition: transform .25s ease; }
+  .sidebar.open { transform: translateX(0); }
+  .sidebar-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,.4); z-index: 1030; }
+}
+
+/* ---------- Vitrine ---------- */
+.hero { background: linear-gradient(135deg, #12393d 0%, var(--brand) 100%); color: #fff; padding: 4.5rem 0; }
+.feature-icon { width: 52px; height: 52px; border-radius: .8rem; display: inline-flex; align-items: center; justify-content: center; background: var(--brand-light); color: var(--brand); font-size: 1.5rem; }
+
+.stat-card .value { font-size: 1.8rem; font-weight: 700; }
+.stat-card .icon { font-size: 1.6rem; color: var(--brand); }
+
+.exo-img { width: 100%; height: 140px; object-fit: cover; border-radius: .6rem .6rem 0 0; background: var(--brand-light); }
