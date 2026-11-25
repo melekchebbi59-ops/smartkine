@@ -15,6 +15,8 @@ export const MENUS: Record<UserType, MenuItem[]> = {
     { label: 'Utilisateurs', icon: 'people', link: '/gerant/utilisateurs' },
     { label: 'Patients & affectations', icon: 'diagram-3', link: '/gerant/patients' },
     { label: "Banque d'exercices", icon: 'collection', link: '/gerant/exercices' },
+    { label: 'Factures & paiements', icon: 'receipt', link: '/gerant/factures' },
+    { label: 'Messagerie', icon: 'chat-dots', link: '/messages' },
     { label: 'Mon profil', icon: 'person-circle', link: '/profil' },
   ],
   kine: [
@@ -23,12 +25,15 @@ export const MENUS: Record<UserType, MenuItem[]> = {
     { label: 'Demandes patients', icon: 'arrow-left-right', link: '/kine/demandes' },
     { label: 'Mes patients', icon: 'people', link: '/kine/patients' },
     { label: "Banque d'exercices", icon: 'collection', link: '/kine/exercices' },
+    { label: 'Messagerie', icon: 'chat-dots', link: '/messages' },
     { label: 'Mon profil', icon: 'person-circle', link: '/profil' },
   ],
   patient: [
     { label: 'Accueil', icon: 'house', link: '/patient' },
     { label: 'Mon planning', icon: 'calendar-week', link: '/patient/planning' },
     { label: 'Mon plan de rééducation', icon: 'journal-medical', link: '/patient/plan' },
+    { label: 'Mes factures', icon: 'receipt', link: '/patient/factures' },
+    { label: 'Messagerie', icon: 'chat-dots', link: '/messages' },
     { label: 'Mon profil', icon: 'person-circle', link: '/profil' },
   ],
 };

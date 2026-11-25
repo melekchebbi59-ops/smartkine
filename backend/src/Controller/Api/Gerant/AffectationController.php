@@ -5,6 +5,7 @@ namespace App\Controller\Api\Gerant;
 use App\Controller\Api\ApiController;
 use App\Repository\KineRepository;
 use App\Repository\PatientRepository;
+use App\Service\Notifier;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -50,7 +51,7 @@ class AffectationController extends ApiController
 
     /** { kineId: 3 } (ou null pour retirer l'affectation) */
     #[Route('/patients/{id}/affecter', methods: ['POST'], requirements: ['id' => '\d+'])]
-    public function affecter(int $id, Request $request, PatientRepository $patients, KineRepository $kines, EntityManagerInterface $em): JsonResponse
+    public function affecter(int $id, Request $request, PatientRepository $patients, KineRepository $kines, EntityManagerInterface $em, Notifier $notifier): JsonResponse
     {
         $patient = $patients->find($id);
         if (!$patient) {
@@ -68,6 +69,11 @@ class AffectationController extends ApiController
 
         $patient->setKine($kine);
         $em->flush();
+
+        if ($kine) {
+            $notifier->notifier($patient, sprintf('Votre kinésithérapeute est %s.', $kine->getFullName()));
+            $notifier->notifier($kine, sprintf('Nouveau patient affecté : %s.', $patient->getFullName()));
+        }
 
         return $this->json([
             'message' => $kine ? sprintf('%s est affecté(e) à %s.', $patient->getFullName(), $kine->getFullName()) : 'Affectation retirée.',

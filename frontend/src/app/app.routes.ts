@@ -25,6 +25,7 @@ export const routes: Routes = [
     component: AppLayout,
     children: [
       { path: 'profil', loadComponent: () => import('./pages/shared-pages/profil').then(m => m.Profil), title: 'Mon profil' },
+      { path: 'messages', loadComponent: () => import('./pages/shared-pages/messages').then(m => m.MessagesPage), title: 'Messagerie' },
       {
         path: 'gerant',
         canActivate: [roleGuard('gerant')],
@@ -35,6 +36,7 @@ export const routes: Routes = [
           { path: 'utilisateurs', loadComponent: () => import('./pages/gerant/utilisateurs').then(m => m.GerantUtilisateurs), title: 'Utilisateurs' },
           { path: 'patients', loadComponent: () => import('./pages/gerant/patients').then(m => m.GerantPatients), title: 'Patients & affectations' },
           { path: 'exercices', loadComponent: () => import('./pages/shared-pages/exercices').then(m => m.ExercicesPage), title: "Banque d'exercices" },
+          { path: 'factures', loadComponent: () => import('./pages/gerant/factures').then(m => m.GerantFactures), title: 'Factures & paiements' },
         ],
       },
       {
@@ -56,6 +58,7 @@ export const routes: Routes = [
           { path: '', loadComponent: () => import('./pages/patient/accueil').then(m => m.PatientAccueil), title: 'Espace patient' },
           { path: 'planning', loadComponent: () => import('./pages/patient/planning').then(m => m.PatientPlanning), title: 'Mon planning' },
           { path: 'plan', loadComponent: () => import('./pages/patient/plan').then(m => m.PatientPlan), title: 'Mon plan de rééducation' },
+          { path: 'factures', loadComponent: () => import('./pages/patient/factures').then(m => m.PatientFactures), title: 'Mes factures' },
         ],
       },
     ],

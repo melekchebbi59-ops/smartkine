@@ -3,7 +3,7 @@ import { RouterLink } from '@angular/router';
 import { Api } from '../../core/api';
 import { Seance, User } from '../../core/models';
 import { Auth } from '../../services/auth';
-import { dateFr } from '../../shared/format';
+import { dateFr, dt } from '../../shared/format';
 
 /** Accueil patient : accès rapide à la prochaine séance. */
 @Component({
@@ -31,7 +31,12 @@ import { dateFr } from '../../shared/format';
           <div class="fs-5 fw-semibold">{{ moi()?.kine?.fullName ?? 'Pas encore affecté' }}</div>
           <div class="d-flex flex-wrap gap-2 mt-3">
             <a routerLink="/patient/plan" class="btn btn-outline-primary btn-sm"><i class="bi bi-journal-medical me-1"></i>Mon plan de rééducation</a>
+            <a routerLink="/messages" class="btn btn-outline-primary btn-sm"><i class="bi bi-chat-dots me-1"></i>Écrire à mon kiné</a>
           </div>
+          <hr>
+          <div class="small text-uppercase text-muted">Reste à payer</div>
+          <div class="fs-4 fw-bold" [class.text-danger]="+reste() > 0">{{ dt(reste()) }}</div>
+          <a routerLink="/patient/factures" class="small">Voir mes factures →</a>
         </div>
       </div>
     </div>
@@ -41,6 +46,8 @@ export class PatientAccueil {
   auth = inject(Auth);
   private api = inject(Api);
   dateFr = dateFr;
+  dt = dt;
+  reste = signal('0');
 
   seances = signal<Seance[]>([]);
   moi = signal<User | null>(null);
@@ -49,5 +56,6 @@ export class PatientAccueil {
   constructor() {
     this.api.get<Seance[]>('/patient/seances').subscribe(l => this.seances.set(l));
     this.api.get<User>('/me').subscribe(u => this.moi.set(u));
+    this.api.get<{ resume: { reste: string } }>('/patient/factures').subscribe(r => this.reste.set(r.resume.reste));
   }
 }
