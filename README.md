@@ -8,43 +8,64 @@ Projet d'intégration **MDW 3 — ISET Sousse — AU 2026-2027** · Méthode **A
 | Backend (API REST) | PHP 8.4 · Symfony 7.4 · Doctrine ORM · LexikJWT · Symfony Mailer |
 | Frontend | Angular 22 · Bootstrap 5 · Bootstrap Icons (responsive mobile-first, installable PWA) |
 | Base de données | MySQL 8 (13 tables) |
-| Outils | Git / GitHub (1 branche par sprint), Laragon, Mailpit |
+| Outils | Git / GitHub (1 branche par sprint), XAMPP, Postman / Newman, Mailpit |
 
 ---
 
-## 1. Installation (Laragon)
+## 1. Installation (Windows + XAMPP)
 
-### Backend
+**Prérequis :** XAMPP avec **MySQL démarré**, PHP 8.4 ou plus (extensions `sodium`, `pdo_mysql`, `intl` activées dans `php.ini`), Composer, Node.js, Git.
 
-```bash
+### Méthode rapide (2 commandes)
+
+Dans PowerShell, à la racine du projet :
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\installer.ps1   # une seule fois
+powershell -ExecutionPolicy Bypass -File .\demarrer.ps1    # à chaque fois
+```
+
+`installer.ps1` vérifie les outils, complète le `.env`, installe Composer et npm, génère les clés JWT, crée la base et les tables, puis propose les données de démo.
+`demarrer.ps1` ouvre l'API (port 8000), Angular (port 4200), Mailpit s'il est présent, puis le navigateur.
+
+### Méthode manuelle
+
+```powershell
 cd backend
-composer update symfony/mailer --with-dependencies   # 1re fois seulement (ajout de Symfony Mailer)
+copy .env.example .env      # si vous avez déjà un .env : ajoutez-y les variables manquantes de .env.example
+composer update symfony/mailer --with-dependencies   # 1re fois seulement
 composer install
-copy .env.example .env          # (Linux/Mac : cp .env.example .env) puis adapter si besoin
-                                # ⚠ Si vous avez déjà un .env : ajoutez-y MAILER_DSN, MAILER_FROM,
-                                #   FRONTEND_URL, CORS_ALLOW_ORIGIN et DEFAULT_URI (voir .env.example)
-php bin/console lexik:jwt:generate-keypair
+php bin/console lexik:jwt:generate-keypair --skip-if-exists
 php bin/console doctrine:database:create --if-not-exists
 php bin/console doctrine:migrations:migrate -n
-php bin/console app:demo        # données de démonstration (facultatif)
-symfony serve                   # ou : php -S 127.0.0.1:8000 -t public
+php bin/console app:demo     # données de démonstration
+php -S 127.0.0.1:8000 -t public
+```
+
+Dans un deuxième terminal :
+
+```powershell
+cd frontend
+npm install
+npm start                    # http://localhost:4200
 ```
 
 Pas de données de démo ? Créez au moins le premier gérant :
 `php bin/console app:create-gerant gerant@smartkine.tn Gerant123 Kamel Brigui`
 
-### Frontend
+### E-mails de test (facultatif)
 
-```bash
-cd frontend
-npm install
-npm start                       # http://localhost:4200
-```
+XAMPP n'a pas de boîte e-mail de test. Téléchargez **Mailpit** pour Windows ([github.com/axllent/mailpit/releases](https://github.com/axllent/mailpit/releases), fichier `mailpit-windows-amd64.zip`). Placez `mailpit.exe` dans un dossier `tools/` à la racine du projet : `demarrer.ps1` le lance tout seul.
+Les e-mails (confirmation de RDV, acceptation, validation du compte) s'affichent sur **http://localhost:8025**. Sans Mailpit, l'application fonctionne : elle indique seulement que l'e-mail n'a pas pu être envoyé.
 
-### E-mails (Mailpit)
+### Tester toute l'API (80 requêtes, 120 vérifications)
 
-Démarrez Mailpit (Laragon → Menu → Mail → Mailpit) puis ouvrez **http://localhost:8025** :
-les e-mails de confirmation de RDV, d'acceptation et de validation de compte y arrivent.
+Sur une base chargée avec `app:demo` :
+
+- **Postman** : *Import* → `tests/SmartKine.postman_collection.json` → *Run collection* ;
+- **ligne de commande** : `npx newman run tests/SmartKine.postman_collection.json`.
+
+La collection rejoue tout le parcours (visiteur → gérant → kiné → patient → facturation → messagerie). Elle vérifie aussi les **droits de chaque rôle** : un patient qui appelle l'espace gérant reçoit 403, un kiné qui ouvre le dossier d'un patient qui n'est pas le sien reçoit 404, un token falsifié reçoit 401.
 
 ### Comptes de démonstration (`app:demo`)
 
@@ -54,12 +75,22 @@ les e-mails de confirmation de RDV, d'acceptation et de validation de compte y a
 | Kiné | melek@smartkine.tn | Kine12345 |
 | Kiné | fadwa@smartkine.tn | Kine12345 |
 | Patient | sami@test.tn | Patient123 |
+| Patient (inscription en attente) | hedi@test.tn | Patient123 |
+
+### Publier sur GitHub
+
+```powershell
+git push origin sprint-1 sprint-2 sprint-3
+git checkout main
+git merge sprint-3
+git push origin main
+```
 
 ---
 
 ## 2. Parcours principal (à montrer en soutenance)
 
-1. **Visiteur** → *Prendre rendez-vous* → reçoit l'e-mail de confirmation (Mailpit).
+1. **Visiteur** → *Prendre rendez-vous* → reçoit l'e-mail de confirmation (Mailpit, si installé).
 2. **Gérant** → *Demandes de RDV* → accepte (e-mail envoyé avec le lien d'inscription).
 3. **Visiteur** → *Créer mon compte* (même e-mail) → compte « en attente ».
 4. **Gérant** → *Inscriptions* → valide · *Patients & affectations* → affecte un kiné.
@@ -99,7 +130,7 @@ US-10, US-11, US-12, US-20, US-25, US-26, US-27, US-28, US-29
 (facturation à partir des séances, paiements partiels et reste à payer calculé automatiquement, messagerie interne et diffusion,
 notifications, tableau de bord statistique, optimisation mobile + manifeste PWA, commande de données de démo).
 
-**→ Les 30 user stories du backlog sont couvertes.**
+**→ Les 30 user stories du backlog sont couvertes et vérifiées par la collection Postman (`tests/`).**
 
 ### Règles de gestion retenues
 

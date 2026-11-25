@@ -9,6 +9,7 @@ use App\Entity\Facture;
 use App\Entity\Gerant;
 use App\Entity\Kine;
 use App\Entity\Message;
+use App\Entity\Notification;
 use App\Entity\Paiement;
 use App\Entity\Patient;
 use App\Entity\PlanReeducation;
@@ -144,6 +145,21 @@ class DemoDataCommand extends Command
         // Messages
         $this->em->persist((new Message())->setExpediteur($patients[0])->setDestinataire($k1)->setContenu('Bonjour, dois-je refaire les exercices à la maison ?'));
         $this->em->persist((new Message())->setExpediteur($k1)->setDestinataire($patients[0])->setContenu('Oui, 2 fois par jour, sans forcer sur la douleur.'));
+        $this->em->persist((new Message())->setExpediteur($gerant)->setDestinataire($k1)->setContenu('Melek, peux-tu prendre une nouvelle patiente (ligamentoplastie) la semaine prochaine ?'));
+        $this->em->persist((new Message())->setExpediteur($k1)->setDestinataire($gerant)->setContenu("Oui, j'ai des créneaux libres mardi et jeudi matin."));
+        $this->em->persist((new Message())->setExpediteur($patients[1])->setDestinataire($gerant)->setContenu('Bonjour, est-ce que je peux payer le reste par chèque ?'));
+
+        // Notifications (US-12)
+        foreach ([
+            [$patients[0], 'Bienvenue sur SmartKiné ! Votre compte a été validé par le gérant.'],
+            [$patients[0], 'Votre kinésithérapeute est Melek Chabbi.'],
+            [$patients[0], 'Votre kiné a créé un nouveau plan de rééducation : « Plan — Entorse de la cheville ».'],
+            [$patients[0], 'Paiement de 135.00 DT reçu (facture FAC-' . date('Y') . '-0001). Reste à payer : 0.00 DT.'],
+            [$k1, 'Sami Ben Ali demande le report de la séance du ' . $report->getDateHeure()->format('d/m/Y H:i') . '.'],
+            [$k1, 'Nouveau patient affecté : Ines Trabelsi.'],
+        ] as [$dest, $texte]) {
+            $this->em->persist((new Notification())->setDestinataire($dest)->setTexte($texte));
+        }
 
         $this->em->flush();
 

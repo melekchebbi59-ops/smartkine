@@ -1,0 +1,3545 @@
+{
+  "info": {
+    "_postman_id": "ae5042b7-7289-5d3c-81e9-ab4146cb5723",
+    "name": "SmartKiné — Recette API (30 US + sécurité)",
+    "description": "Scénario complet à exécuter dans l'ordre sur une base chargée avec `php bin/console app:demo`.\nPostman : Run collection. Ligne de commande : npx newman run SmartKine.postman_collection.json",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "0. Visiteur (US-01 à US-04)",
+      "item": [
+        {
+          "name": "US-01 Infos du centre",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "pm.test('horaires + services', () => { pm.expect(j.horaires.length).to.be.above(0); pm.expect(j.services.length).to.be.above(0); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/public/centre",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "public",
+                "centre"
+              ]
+            }
+          }
+        },
+        {
+          "name": "US-02 Demande RDV incomplète → 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/public/demandes-rdv",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "public",
+                "demandes-rdv"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nom\": \"Test\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "US-02 Demande RDV avec date passée → 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/public/demandes-rdv",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "public",
+                "demandes-rdv"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nom\": \"Recette\",\n  \"prenom\": \"Auto\",\n  \"telephone\": \"22 111 222\",\n  \"email\": \"x@test.tn\",\n  \"dateSouhaitee\": \"2020-01-01T10:00\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "US-02/03 Demande RDV valide → 201 + e-mail",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201', () => pm.response.to.have.status(201));",
+                  "const j = pm.response.json();",
+                  "pm.collectionVariables.set('demandeId', j.demande.id);",
+                  "pm.test('statut en_attente', () => pm.expect(j.demande.statut).to.eql('en_attente'));"
+                ]
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const id = Date.now();",
+                  "pm.collectionVariables.set('newEmail', `recette${id}@test.tn`);",
+                  "const d = new Date(Date.now() + 3*86400000); d.setHours(10,0,0,0);",
+                  "pm.collectionVariables.set('futureDate', d.toISOString().slice(0,16));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/public/demandes-rdv",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "public",
+                "demandes-rdv"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nom\": \"Recette\",\n  \"prenom\": \"Auto\",\n  \"telephone\": \"22 111 222\",\n  \"email\": \"{{newEmail}}\",\n  \"dateSouhaitee\": \"{{futureDate}}\",\n  \"motif\": \"Entorse du genou\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "US-04 Inscription sans RDV accepté → 403",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 403', () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/register",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "register"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"firstName\": \"Auto\",\n  \"lastName\": \"Recette\",\n  \"email\": \"{{newEmail}}\",\n  \"password\": \"Patient123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "1. Connexion (US-05, US-13, US-21)",
+      "item": [
+        {
+          "name": "Connexion gérant",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "pm.collectionVariables.set('tGerant', pm.response.json().token);",
+                  "pm.test('token contient le type gerant', () => { const p = JSON.parse(atob(pm.response.json().token.split('.')[1])); pm.expect(p.type).to.eql('gerant'); pm.expect(p.roles).to.include('ROLE_GERANT'); pm.expect(p.roles).to.not.include('ROLE_PATIENT'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "login"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"gerant@smartkine.tn\",\n  \"password\": \"Gerant123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Connexion kiné Melek",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "pm.collectionVariables.set('tKine', pm.response.json().token);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "login"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"melek@smartkine.tn\",\n  \"password\": \"Kine12345\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Connexion kiné Fadwa",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "pm.collectionVariables.set('tKine2', pm.response.json().token);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "login"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"fadwa@smartkine.tn\",\n  \"password\": \"Kine12345\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Connexion patient Sami",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "pm.collectionVariables.set('tSami', pm.response.json().token);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "login"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"sami@test.tn\",\n  \"password\": \"Patient123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Mauvais mot de passe → 401",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 401', () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "login"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"sami@test.tn\",\n  \"password\": \"faux\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Patient non validé → 401",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 401', () => pm.response.to.have.status(401));",
+                  "pm.test('message en attente', () => pm.expect(pm.response.json().message).to.include('attente'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "login"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"hedi@test.tn\",\n  \"password\": \"Patient123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Sans token → 401",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 401', () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "me"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Gérant : demandes, inscriptions, comptes (US-22, US-23, US-24)",
+      "item": [
+        {
+          "name": "Liste des demandes en attente",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "pm.test('contient la nouvelle demande', () => pm.expect(j.map(d => d.id)).to.include(pm.collectionVariables.get('demandeId')));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tGerant}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/gerant/demandes-rdv?statut=en_attente",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "gerant",
+                "demandes-rdv"
+              ],
+              "query": [
+                {
+                  "key": "statut",
+                  "value": "en_attente"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Accepter la demande",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "pm.test('acceptée', () => pm.expect(pm.response.json().demande.statut).to.eql('acceptee'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tGerant}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/gerant/demandes-rdv/{{demandeId}}/accepter",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "gerant",
+                "demandes-rdv",
+                "{{demandeId}}",
+                "accepter"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"dateRdv\": \"{{futureDate}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "US-04 Inscription après RDV → 201 (en attente)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201', () => pm.response.to.have.status(201));",
+                  "const j = pm.response.json();",
+                  "pm.collectionVariables.set('newPatientId', j.user.id);",
+                  "pm.test('en_attente', () => pm.expect(j.user.statutInscription).to.eql('en_attente'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/register",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "register"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"firstName\": \"Auto\",\n  \"lastName\": \"Recette\",\n  \"email\": \"{{newEmail}}\",\n  \"password\": \"Patient123\",\n  \"typeTraitement\": \"Entorse du genou\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Inscription en double → 409",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 409', () => pm.response.to.have.status(409));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/register",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "register"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"firstName\": \"Auto\",\n  \"lastName\": \"Recette\",\n  \"email\": \"{{newEmail}}\",\n  \"password\": \"Patient123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Connexion avant validation → 401",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 401', () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "login"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{newEmail}}\",\n  \"password\": \"Patient123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Valider l'inscription",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "pm.test('valide', () => pm.expect(pm.response.json().patient.statutInscription).to.eql('valide'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tGerant}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/gerant/inscriptions/{{newPatientId}}/valider",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "gerant",
+                "inscriptions",
+                "{{newPatientId}}",
+                "valider"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Connexion du nouveau patient",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "pm.collectionVariables.set('tNew', pm.response.json().token);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "login"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{newEmail}}\",\n  \"password\": \"Patient123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Créer un compte kiné",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201', () => pm.response.to.have.status(201));",
+                  "const j = pm.response.json();",
+                  "pm.collectionVariables.set('newKineId', j.user.id); pm.collectionVariables.set('newKineEmail', j.user.email);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tGerant}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/gerant/utilisateurs",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "gerant",
+                "utilisateurs"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"kine\",\n  \"firstName\": \"Kine\",\n  \"lastName\": \"Recette\",\n  \"email\": \"kine{{$timestamp}}@smartkine.tn\",\n  \"password\": \"Kine12345\",\n  \"specialite\": \"Sport\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Créer un compte avec un e-mail existant → 409",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 409', () => pm.response.to.have.status(409));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tGerant}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/gerant/utilisateurs",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "gerant",
+                "utilisateurs"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"kine\",\n  \"firstName\": \"X\",\n  \"lastName\": \"Y\",\n  \"email\": \"melek@smartkine.tn\",\n  \"password\": \"Kine12345\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Le gérant ne crée pas de patient → 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tGerant}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/gerant/utilisateurs",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "gerant",
+                "utilisateurs"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"patient\",\n  \"firstName\": \"X\",\n  \"lastName\": \"Y\",\n  \"email\": \"p@test.tn\",\n  \"password\": \"Patient123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Désactiver le kiné",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tGerant}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/gerant/utilisateurs/{{newKineId}}/statut",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "gerant",
+                "utilisateurs",
+                "{{newKineId}}",
+                "statut"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"active\": false\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Kiné désactivé ne peut pas se connecter → 401",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 401', () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "login"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{newKineEmail}}\",\n  \"password\": \"Kine12345\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Réactiver le kiné",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tGerant}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/gerant/utilisateurs/{{newKineId}}/statut",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "gerant",
+                "utilisateurs",
+                "{{newKineId}}",
+                "statut"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"active\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Liste des kinés (trouver Melek)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "const m = j.find(k => k.email === 'melek@smartkine.tn'); pm.collectionVariables.set('melekId', m.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tGerant}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/gerant/kines",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "gerant",
+                "kines"
+              ]
+            }
+          }
+        },
+        {
+          "name": "US-24 Affecter le patient à Melek",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "pm.test('kiné affecté', () => pm.expect(pm.response.json().patient.kine.id).to.eql(Number(pm.collectionVariables.get('melekId'))));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tGerant}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/gerant/patients/{{newPatientId}}/affecter",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "gerant",
+                "patients",
+                "{{newPatientId}}",
+                "affecter"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"kineId\": \"{{melekId}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Sécurité : droits par rôle (RBAC)",
+      "item": [
+        {
+          "name": "Patient → espace gérant : 403",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 403', () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tSami}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/gerant/utilisateurs",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "gerant",
+                "utilisateurs"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Kiné → statistiques du gérant : 403",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 403', () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tKine}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/gerant/statistiques",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "gerant",
+                "statistiques"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Patient → espace kiné : 403",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 403', () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tSami}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/kine/patients",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "kine",
+                "patients"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Gérant → espace patient : 403",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 403', () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tGerant}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/patient/seances",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "patient",
+                "seances"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Kiné → diffusion : 403",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 403', () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tKine}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/messages/diffusion",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "messages",
+                "diffusion"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cible\": \"tous\",\n  \"contenu\": \"x\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Patient → créer un exercice : 403",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 403', () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tSami}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/exercices",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "exercices"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nom\": \"x\",\n  \"duree\": 5\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Kiné → supprimer un exercice : 403",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 403', () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tKine}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/exercices/1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "exercices",
+                "1"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Autre kiné → fiche du patient : 404",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 404', () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tKine2}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/kine/patients/{{newPatientId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "kine",
+                "patients",
+                "{{newPatientId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Autre kiné → modifier le dossier : 404",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 404', () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tKine2}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/kine/patients/{{newPatientId}}/dossier",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "kine",
+                "patients",
+                "{{newPatientId}}",
+                "dossier"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"descriptionEtat\": \"x\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Patient → écrire à un kiné qui n'est pas le sien : 403",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 403', () => pm.response.to.have.status(403));"
+                ]
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// L'id 3 = Fadwa dans les données de démo"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tNew}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/messages",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "messages"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"destinataireId\": 3,\n  \"contenu\": \"Bonjour\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Token falsifié → 401",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 401', () => pm.response.to.have.status(401));"
+                ]
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.request.headers.upsert({key: 'Authorization', value: 'Bearer abc.def.ghi'});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "me"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. Kiné : patients, dossier, exercices, plans, séances (US-14 à US-19)",
+      "item": [
+        {
+          "name": "US-14 Mes patients",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "pm.test('contient le nouveau patient', () => pm.expect(pm.response.json().map(p => p.id)).to.include(Number(pm.collectionVariables.get('newPatientId'))));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tKine}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/kine/patients",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "kine",
+                "patients"
+              ]
+            }
+          }
+        },
+        {
+          "name": "US-17 Mettre à jour le dossier médical",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "pm.test('poids enregistré', () => pm.expect(Number(pm.response.json().dossier.poids)).to.eql(72.5));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tKine}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/kine/patients/{{newPatientId}}/dossier",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "kine",
+                "patients",
+                "{{newPatientId}}",
+                "dossier"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"descriptionEtat\": \"Entorse grade 2, œdème\",\n  \"tensionArterielle\": \"12/8\",\n  \"poids\": \"72.5\",\n  \"glycemie\": \"0.95\",\n  \"autresMaladies\": \"Asthme\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "US-17 Poids non numérique → 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tKine}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/kine/patients/{{newPatientId}}/dossier",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "kine",
+                "patients",
+                "{{newPatientId}}",
+                "dossier"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"poids\": \"abc\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "US-19 Le kiné ajoute un exercice (coût ignoré)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201', () => pm.response.to.have.status(201));",
+                  "const j = pm.response.json();",
+                  "pm.collectionVariables.set('exoKine', j.exercice.id);",
+                  "pm.test('seul le gérant fixe le coût', () => pm.expect(Number(j.exercice.cout)).to.eql(0));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tKine}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/exercices",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "exercices"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nom\": \"Squat assisté\",\n  \"duree\": 12,\n  \"cout\": 999,\n  \"objectif\": \"Renforcer\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "US-30 Le gérant fixe le tarif",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "pm.test('coût = 18', () => pm.expect(Number(pm.response.json().exercice.cout)).to.eql(18));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tGerant}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/exercices/{{exoKine}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "exercices",
+                "{{exoKine}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cout\": 18\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "US-18 Plan sans exercice → 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tKine}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/kine/plans",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "kine",
+                "plans"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"patientId\": \"{{newPatientId}}\",\n  \"titre\": \"Plan\",\n  \"exerciceIds\": []\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "US-18 Créer un plan de rééducation",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201', () => pm.response.to.have.status(201));",
+                  "const j = pm.response.json();",
+                  "pm.collectionVariables.set('planId', j.plan.id);",
+                  "pm.test('2 exercices', () => pm.expect(j.plan.exercices.length).to.eql(2));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tKine}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/kine/plans",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "kine",
+                "plans"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"patientId\": \"{{newPatientId}}\",\n  \"titre\": \"Rééducation du genou\",\n  \"objectifs\": \"Reprise de la marche\",\n  \"exerciceIds\": [\n    1,\n    \"{{exoKine}}\"\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "US-15 Séance dans le passé → 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tKine}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/kine/seances",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "kine",
+                "seances"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"patientId\": \"{{newPatientId}}\",\n  \"dateHeure\": \"2020-01-01T10:00\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "US-15 Planifier 3 séances (1 / semaine)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201', () => pm.response.to.have.status(201));",
+                  "const j = pm.response.json();",
+                  "pm.test('3 séances', () => pm.expect(j.seances.length).to.eql(3));",
+                  "pm.collectionVariables.set('s1', j.seances[0].id); pm.collectionVariables.set('s2', j.seances[1].id); pm.collectionVariables.set('s3', j.seances[2].id);",
+                  "pm.test('prix = somme des exercices', () => pm.expect(Number(j.seances[0].prix)).to.eql(38));"
+                ]
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const d = new Date(Date.now() + 40*86400000); d.setHours(7,15,0,0);",
+                  "const p = n => String(n).padStart(2,'0');",
+                  "pm.collectionVariables.set('seanceDate', `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}T07:15`);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tKine}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/kine/seances",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "kine",
+                "seances"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"patientId\": \"{{newPatientId}}\",\n  \"dateHeure\": \"{{seanceDate}}\",\n  \"duree\": 45,\n  \"objectif\": \"Bilan + renforcement\",\n  \"exerciceIds\": [\n    1,\n    \"{{exoKine}}\"\n  ],\n  \"planId\": \"{{planId}}\",\n  \"nombre\": 3,\n  \"intervalleJours\": 7\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "US-15 Créneau déjà occupé → 409",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 409', () => pm.response.to.have.status(409));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tKine}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/kine/seances",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "kine",
+                "seances"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"patientId\": \"{{newPatientId}}\",\n  \"dateHeure\": \"{{seanceDate}}\",\n  \"duree\": 30\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "5. Patient : planning, report, annulation, plan (US-06 à US-09)",
+      "item": [
+        {
+          "name": "US-06 Mon planning",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "pm.test('3 séances', () => pm.expect(pm.response.json().length).to.eql(3));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tNew}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/patient/seances",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "patient",
+                "seances"
+              ]
+            }
+          }
+        },
+        {
+          "name": "US-07 Demander un report",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "pm.test('report_demande', () => pm.expect(pm.response.json().seance.statut).to.eql('report_demande'));"
+                ]
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const d = new Date(Date.now() + 41*86400000); d.setHours(7,15,0,0);",
+                  "const p = n => String(n).padStart(2,'0');",
+                  "pm.collectionVariables.set('reportDate', `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}T07:15`);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tNew}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/patient/seances/{{s1}}/report",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "patient",
+                "seances",
+                "{{s1}}",
+                "report"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"dateProposee\": \"{{reportDate}}\",\n  \"motif\": \"Examen\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "US-07 Deuxième demande sur la même séance → 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tNew}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/patient/seances/{{s1}}/report",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "patient",
+                "seances",
+                "{{s1}}",
+                "report"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"dateProposee\": \"{{reportDate}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "US-08 Demander une annulation",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tNew}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/patient/seances/{{s2}}/annulation",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "patient",
+                "seances",
+                "{{s2}}",
+                "annulation"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"motif\": \"Voyage\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "US-08 Séance d'un autre patient → 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tSami}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/patient/seances/{{s3}}/annulation",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "patient",
+                "seances",
+                "{{s3}}",
+                "annulation"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "US-09 Mon plan de rééducation",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "pm.test('1 plan avec ses exercices', () => { const j = pm.response.json(); pm.expect(j.length).to.eql(1); pm.expect(j[0].exercices.length).to.eql(2); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tNew}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/patient/plans",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "patient",
+                "plans"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "6. Kiné : traitement des demandes (US-16)",
+      "item": [
+        {
+          "name": "Demandes en attente",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "pm.test('report + annulation présents', () => { const ids = pm.response.json().map(s => s.id); pm.expect(ids).to.include(pm.collectionVariables.get('s1')); pm.expect(ids).to.include(pm.collectionVariables.get('s2')); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tKine}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/kine/seances/demandes",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "kine",
+                "seances",
+                "demandes"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Accepter le report",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "pm.test('nouvelle date appliquée', () => { pm.expect(j.seance.statut).to.eql('planifiee'); pm.expect(j.seance.dateHeure.slice(0,16)).to.eql(pm.collectionVariables.get('reportDate')); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tKine}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/kine/seances/{{s1}}/report/valider",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "kine",
+                "seances",
+                "{{s1}}",
+                "report",
+                "valider"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Refuser l'annulation",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "pm.test('séance maintenue', () => pm.expect(pm.response.json().seance.statut).to.eql('planifiee'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tKine}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/kine/seances/{{s2}}/annulation/refuser",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "kine",
+                "seances",
+                "{{s2}}",
+                "annulation",
+                "refuser"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Annuler la 3e séance (kiné)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "pm.test('annulee', () => pm.expect(pm.response.json().seance.statut).to.eql('annulee'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tKine}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/kine/seances/{{s3}}/annuler",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "kine",
+                "seances",
+                "{{s3}}",
+                "annuler"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "7. Facturation et paiements (US-25, US-26, US-10)",
+      "item": [
+        {
+          "name": "Séances à facturer (2, l'annulée exclue)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "pm.test('2 séances', () => pm.expect(pm.response.json().length).to.eql(2));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tGerant}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/gerant/factures/a-facturer/{{newPatientId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "gerant",
+                "factures",
+                "a-facturer",
+                "{{newPatientId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "US-25 Établir la facture",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201', () => pm.response.to.have.status(201));",
+                  "const j = pm.response.json();",
+                  "pm.collectionVariables.set('factureId', j.facture.id);",
+                  "pm.test('total = 2 × 38 DT', () => pm.expect(Number(j.facture.montantTotal)).to.eql(76));",
+                  "pm.test('numéro FAC-', () => pm.expect(j.facture.numero).to.match(/^FAC-\\d{4}-\\d{4}$/));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tGerant}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/gerant/factures",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "gerant",
+                "factures"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"patientId\": \"{{newPatientId}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Refacturer les mêmes séances → 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tGerant}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/gerant/factures",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "gerant",
+                "factures"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"patientId\": \"{{newPatientId}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "US-26 Paiement partiel de 30 DT",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201', () => pm.response.to.have.status(201));",
+                  "const j = pm.response.json();",
+                  "pm.test('reste 46, partielle', () => { pm.expect(Number(j.facture.resteAPayer)).to.eql(46); pm.expect(j.facture.statut).to.eql('partielle'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tGerant}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/gerant/factures/{{factureId}}/paiements",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "gerant",
+                "factures",
+                "{{factureId}}",
+                "paiements"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"montant\": 30,\n  \"mode\": \"especes\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Paiement supérieur au reste → 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tGerant}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/gerant/factures/{{factureId}}/paiements",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "gerant",
+                "factures",
+                "{{factureId}}",
+                "paiements"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"montant\": 100\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Paiement négatif → 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tGerant}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/gerant/factures/{{factureId}}/paiements",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "gerant",
+                "factures",
+                "{{factureId}}",
+                "paiements"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"montant\": -5\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Supprimer une facture déjà payée en partie → 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tGerant}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/gerant/factures/{{factureId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "gerant",
+                "factures",
+                "{{factureId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Solde de 46 DT par carte",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201', () => pm.response.to.have.status(201));",
+                  "pm.test('payée', () => pm.expect(pm.response.json().facture.statut).to.eql('payee'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tGerant}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/gerant/factures/{{factureId}}/paiements",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "gerant",
+                "factures",
+                "{{factureId}}",
+                "paiements"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"montant\": 46,\n  \"mode\": \"carte\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "US-10 Le patient voit ses factures",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "pm.test('reste 0, payé 76', () => { pm.expect(Number(j.resume.reste)).to.eql(0); pm.expect(Number(j.resume.paye)).to.eql(76); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tNew}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/patient/factures",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "patient",
+                "factures"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Un patient ne voit pas les factures des autres",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "pm.test('pas la facture du nouveau patient', () => pm.expect(pm.response.json().factures.map(f => f.id)).to.not.include(pm.collectionVariables.get('factureId')));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tSami}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/patient/factures",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "patient",
+                "factures"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "8. Messagerie et notifications (US-11, US-12, US-20, US-29)",
+      "item": [
+        {
+          "name": "Contacts du patient = gérant(s) + son kiné",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "pm.test('kiné présent, pas Fadwa', () => { const ids = j.map(c => c.id); pm.expect(ids).to.include(Number(pm.collectionVariables.get('melekId'))); pm.expect(ids).to.not.include(3); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tNew}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/messages/contacts",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "messages",
+                "contacts"
+              ]
+            }
+          }
+        },
+        {
+          "name": "US-11 Le patient écrit à son kiné",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201', () => pm.response.to.have.status(201));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tNew}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/messages",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "messages"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"destinataireId\": \"{{melekId}}\",\n  \"contenu\": \"Bonjour, je peux venir 10 min plus tôt ?\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Message vide → 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tNew}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/messages",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "messages"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"destinataireId\": \"{{melekId}}\",\n  \"contenu\": \"  \"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "US-20 Le kiné voit 1 message non lu",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "pm.test('conversation non lue', () => { const c = pm.response.json().find(c => c.contact.id === Number(pm.collectionVariables.get('newPatientId'))); pm.expect(c.nonLus).to.eql(1); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tKine}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/messages",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "messages"
+              ]
+            }
+          }
+        },
+        {
+          "name": "US-20 Ouvrir la conversation (marque lu)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tKine}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/messages/avec/{{newPatientId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "messages",
+                "avec",
+                "{{newPatientId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "US-20 Le kiné répond",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201', () => pm.response.to.have.status(201));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tKine}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/messages",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "messages"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"destinataireId\": \"{{newPatientId}}\",\n  \"contenu\": \"Oui, sans souci.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "US-29 Diffusion du gérant à tous",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201', () => pm.response.to.have.status(201));",
+                  "pm.test('envoyé à plusieurs personnes', () => pm.expect(pm.response.json().message).to.match(/\\d+ personne/));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tGerant}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/messages/diffusion",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "messages",
+                "diffusion"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cible\": \"tous\",\n  \"contenu\": \"Le centre sera fermé le 1er décembre.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "US-12 Notifications du patient",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "pm.test('au moins 5 notifications', () => pm.expect(j.notifications.length).to.be.at.least(5));",
+                  "pm.test('compte validé notifié', () => pm.expect(j.notifications.map(n => n.texte).join(' ')).to.include('validé'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tNew}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/notifications",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "notifications"
+              ]
+            }
+          }
+        },
+        {
+          "name": "US-12 Tout marquer comme lu",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tNew}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/notifications/lire-tout",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "notifications",
+                "lire-tout"
+              ]
+            }
+          }
+        },
+        {
+          "name": "US-12 Plus de notification non lue",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "pm.test('0 non lue', () => pm.expect(pm.response.json().nonLues).to.eql(0));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tNew}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/notifications",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "notifications"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "9. Tableau de bord (US-27, US-28)",
+      "item": [
+        {
+          "name": "US-28 Statistiques",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "pm.test('champs présents', () => ['seancesJour','seancesSemaine','recetteJour','recetteMois','patientsParKine','recettesMensuelles'].forEach(k => pm.expect(j).to.have.property(k)));",
+                  "pm.test('12 mois', () => pm.expect(j.recettesMensuelles.length).to.eql(12));",
+                  "pm.test('recette du jour >= 76 DT', () => pm.expect(Number(j.recetteJour)).to.be.at.least(76));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tGerant}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/gerant/statistiques",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "gerant",
+                "statistiques"
+              ]
+            }
+          }
+        },
+        {
+          "name": "US-27 Activité jour / semaine",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "pm.test('jour + semaine', () => { const j = pm.response.json(); pm.expect(j).to.have.property('jour'); pm.expect(j).to.have.property('semaine'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tGerant}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/gerant/activite",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "gerant",
+                "activite"
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://127.0.0.1:8000/api"
+    }
+  ]
+}
